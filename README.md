@@ -1,4 +1,4 @@
-# 🤖 Agentic AI for Autonomous Enterprise Workflows
+# 🤖 NEXUS - Agentic AI for Autonomous Enterprise Workflows
 
 > A multi-agent AI system that automates complex enterprise workflows with minimal human intervention.
 
@@ -142,11 +142,6 @@ Tracks:
 ```bash
 git clone https://github.com/your-username/agentic-ai-workflow.git
 cd agentic-ai-workflow
-
-### 2. Open the project
-
-Simply open the HTML file in your browser:
-
 ```
 📂 2. Open the Project
 
