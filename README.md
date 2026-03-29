@@ -147,7 +147,7 @@ cd agentic-ai-workflow
 
 Simply open the HTML file in your browser:
 
-```bash
+```
 open index.html
 
 Run the system
