@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Agentic Enterprise Workflow</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #04070f;
+  --surface: #080e1a;
+  --surface2: #0d1525;
+  --border: #1a2640;
+  --border2: #243350;
+  --accent: #00e5ff;
+  --accent2: #7c3aed;
+  --accent3: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --glow: 0 0 20px rgba(0,229,255,0.15);
+  --glow2: 0 0 30px rgba(124,58,237,0.2);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid noise texture */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(4,7,15,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  text-shadow: var(--glow);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-dot { width:8px; height:8px; background:var(--accent); border-radius:50%; animation: pulse 2s ease-in-out infinite; }
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.5)} }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.status-badge {
+  display:flex; align-items:center; gap:6px;
+  padding: 4px 12px;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  font-size:11px;
+  color: var(--text2);
+}
+.status-badge .dot { width:6px;height:6px;border-radius:50%; }
+.dot-green { background:var(--accent3); box-shadow:0 0 6px var(--accent3); }
+.dot-amber { background:var(--warn); box-shadow:0 0 6px var(--warn); }
+.dot-red { background:var(--danger); box-shadow:0 0 6px var(--danger); }
+
+/* ── LAYOUT ── */
+.layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px 1fr 300px;
+  grid-template-rows: auto 1fr;
+  gap: 0;
+  height: calc(100vh - 60px);
+}
+
+/* ── PANELS ── */
+.panel {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--text3);
+  text-transform: uppercase;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── WORKFLOW SELECTOR ── */
+.workflow-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface);
+  position: relative;
+  overflow: hidden;
+}
+
+.workflow-card::before {
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  background: var(--border2);
+  transition: background 0.2s;
+}
+
+.workflow-card:hover { border-color: var(--border2); }
+.workflow-card.active { border-color: var(--accent); background: rgba(0,229,255,0.04); }
+.workflow-card.active::before { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+.wf-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.wf-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.wf-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  background: rgba(0,229,255,0.08);
+  color: var(--accent);
+  border: 1px solid rgba(0,229,255,0.2);
+}
+
+/* ── AGENT CARDS ── */
+.agent-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.agent-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--surface);
+  transition: all 0.3s;
+}
+
+.agent-card.active-agent {
+  border-color: var(--accent2);
+  background: rgba(124,58,237,0.08);
+  box-shadow: var(--glow2);
+  animation: agentPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes agentPulse {
+  0%,100%{box-shadow:0 0 10px rgba(124,58,237,0.15)}
+  50%{box-shadow:0 0 25px rgba(124,58,237,0.35)}
+}
+
+.agent-card.done-agent { border-color: var(--accent3); background: rgba(16,185,129,0.06); }
+.agent-card.error-agent { border-color: var(--danger); background: rgba(239,68,68,0.06); }
+
+.agent-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+
+.agent-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.agent-role {
+  font-size: 10px;
+  color: var(--text3);
+  font-family: 'IBM Plex Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.agent-status {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.status-idle { color:var(--text3); border-color:var(--border); }
+.status-running { color:var(--accent); border-color:rgba(0,229,255,0.3); background:rgba(0,229,255,0.06); }
+.status-done { color:var(--accent3); border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.06); }
+.status-error { color:var(--danger); border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.06); }
+.status-retrying { color:var(--warn); border-color:rgba(245,158,11,0.3); background:rgba(245,158,11,0.06); }
+
+.progress-bar {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.5s ease;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
+}
+
+/* ── CENTER: WORKFLOW VISUALIZATION ── */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.workflow-viz {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.workflow-viz::-webkit-scrollbar { width: 4px; }
+.workflow-viz::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Step nodes */
+.steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+}
+
+.step-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: var(--surface);
+  flex-shrink: 0;
+  transition: all 0.3s;
+  position: relative;
+  z-index: 1;
+}
+
+.step-icon.si-pending { border-color:var(--border2); color:var(--text3); }
+.step-icon.si-running { border-color:var(--accent); color:var(--accent); background:rgba(0,229,255,0.08); box-shadow:0 0 12px rgba(0,229,255,0.25); animation:stepPulse 1.2s ease-in-out infinite; }
+.step-icon.si-done { border-color:var(--accent3); color:var(--accent3); background:rgba(16,185,129,0.08); }
+.step-icon.si-error { border-color:var(--danger); color:var(--danger); background:rgba(239,68,68,0.08); }
+.step-icon.si-retrying { border-color:var(--warn); color:var(--warn); background:rgba(245,158,11,0.08); animation:stepPulse 0.8s ease-in-out infinite; }
+.step-icon.si-skipped { border-color:var(--text3); color:var(--text3); opacity:0.5; }
+
+@keyframes stepPulse {
+  0%,100%{box-shadow:0 0 8px rgba(0,229,255,0.2)}
+  50%{box-shadow:0 0 20px rgba(0,229,255,0.5)}
+}
+
+.step-line {
+  width: 2px;
+  min-height: 40px;
+  background: var(--border);
+  transition: background 0.5s;
+  flex: 1;
+}
+
+.step-line.sl-done { background: var(--accent3); }
+.step-line.sl-active { background: linear-gradient(var(--accent3), var(--accent)); }
+
+.step-content {
+  flex: 1;
+  padding: 6px 0 32px 0;
+}
+
+.step-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.step-agent-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.step-description {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.step-output {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  background: var(--surface);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  max-height: 120px;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.4s;
+}
+
+.step-output.visible { opacity:1; transform:translateY(0); }
+
+.step-output::-webkit-scrollbar { width:3px; }
+.step-output::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+
+.error-banner {
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(239,68,68,0.06);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--danger);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-banner {
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(245,158,11,0.06);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--warn);
+  margin-bottom: 8px;
+}
+
+/* ── CONTROL BAR ── */
+.control-bar {
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  background: rgba(8,14,26,0.8);
+}
+
+.btn {
+  padding: 8px 20px;
+  border-radius: 5px;
+  border: 1px solid;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.btn-primary:hover { background: #33eaff; box-shadow: 0 0 20px rgba(0,229,255,0.4); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border2);
+  color: var(--text2);
+}
+.btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+.btn-secondary:disabled { opacity:0.4; cursor:not-allowed; }
+
+.btn-danger {
+  background: transparent;
+  border-color: rgba(239,68,68,0.4);
+  color: var(--danger);
+}
+.btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+.run-status {
+  flex: 1;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.run-status span { color: var(--accent); }
+
+/* ── AUDIT TRAIL ── */
+.audit-panel {
+  border-right: none;
+  overflow: hidden;
+}
+
+.audit-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.audit-entry {
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+
+.audit-entry.type-info { border-left: 3px solid var(--accent); }
+.audit-entry.type-decision { border-left: 3px solid var(--accent2); }
+.audit-entry.type-error { border-left: 3px solid var(--danger); }
+.audit-entry.type-recovery { border-left: 3px solid var(--warn); }
+.audit-entry.type-success { border-left: 3px solid var(--accent3); }
+.audit-entry.type-agent { border-left: 3px solid #60a5fa; }
+
+.audit-time { color: var(--text3); font-size: 9px; margin-bottom: 2px; }
+.audit-agent { color: #60a5fa; font-weight:600; }
+.audit-text { color: var(--text2); }
+.audit-text em { color: var(--accent); font-style:normal; }
+
+/* ── SLA METER ── */
+.sla-section {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.sla-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+.sla-meter {
+  margin-bottom: 10px;
+}
+
+.sla-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 4px;
+}
+
+.sla-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sla-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease, background 0.5s;
+}
+
+/* ── METRICS ── */
+.metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.metric-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.metric-lbl {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  margin-top: 2px;
+}
+
+/* ── INPUT FORM ── */
+.input-form {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.input-form::-webkit-scrollbar { width: 4px; }
+.input-form::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.form-intro {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 20px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 4px;
+  background: rgba(124,58,237,0.04);
+  line-height: 1.6;
+}
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.form-row.full { grid-template-columns: 1fr; }
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+}
+
+.form-input {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+
+select.form-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23475569'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+.form-hint {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* ── TYPING INDICATOR ── */
+.typing {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.typing span {
+  width:4px;height:4px;
+  border-radius:50%;
+  background:var(--accent);
+  animation:typing 1.2s ease-in-out infinite;
+}
+.typing span:nth-child(2){animation-delay:0.2s}
+.typing span:nth-child(3){animation-delay:0.4s}
+@keyframes typing{0%,80%,100%{opacity:0.3;transform:scale(0.8)}40%{opacity:1;transform:scale(1)}}
+
+/* ── THINKING BOX ── */
+.thinking-box {
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(124,58,237,0.06);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: #a78bfa;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* complete banner */
+.complete-banner {
+  border: 1px solid rgba(16,185,129,0.4);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(16,185,129,0.07);
+  text-align: center;
+  margin-top: 8px;
+}
+
+.complete-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--accent3);
+  margin-bottom: 4px;
+}
+
+.complete-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.human-loop {
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 8px;
+  padding: 16px;
+  background: rgba(245,158,11,0.06);
+  margin-top: 8px;
+}
+
+.human-loop-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--warn);
+  margin-bottom: 8px;
+  display:flex;align-items:center;gap:8px;
+}
+
+.human-loop p { font-size:12px;color:var(--text2);margin-bottom:12px; }
+
+.btn-approve {
+  background: rgba(16,185,129,0.15);
+  border: 1px solid var(--accent3);
+  color: var(--accent3);
+  padding: 6px 16px;
+  border-radius:4px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  cursor:pointer;
+  margin-right:8px;
+  transition:all 0.2s;
+}
+.btn-approve:hover { background:rgba(16,185,129,0.3); }
+
+.btn-reject {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 6px 16px;
+  border-radius:4px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-reject:hover { background:rgba(239,68,68,0.2); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    NEXUS
+    <span style="font-weight:300;font-size:14px;color:var(--text3);margin-left:4px">/ Agentic Workflow Engine</span>
+  </div>
+  <div class="header-right">
+    <div class="status-badge"><div class="dot dot-green"></div> API Connected</div>
+    <div class="status-badge"><div class="dot dot-amber" id="system-dot"></div> <span id="system-status">Standby</span></div>
+    <div style="color:var(--text3)" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT: Workflow selector + agents -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Workflow Templates</span>
+    </div>
+    <div class="panel-body" style="flex:none;border-bottom:1px solid var(--border)">
+      <div class="workflow-card active" onclick="selectWorkflow(0,this)">
+        <div class="wf-name">Employee Onboarding</div>
+        <div class="wf-meta"><span>7 steps</span><span>~4 min</span></div>
+        <div><span class="wf-tag">HR / Identity</span></div>
+      </div>
+      <div class="workflow-card" onclick="selectWorkflow(1,this)">
+        <div class="wf-name">Procurement-to-Payment</div>
+        <div class="wf-meta"><span>6 steps</span><span>~3 min</span></div>
+        <div><span class="wf-tag">Finance / ERP</span></div>
+      </div>
+      <div class="workflow-card" onclick="selectWorkflow(2,this)">
+        <div class="wf-name">Contract Lifecycle Mgmt</div>
+        <div class="wf-meta"><span>8 steps</span><span>~5 min</span></div>
+        <div><span class="wf-tag">Legal / Compliance</span></div>
+      </div>
+    </div>
+
+    <div class="panel-header" style="margin-top:0">
+      <span class="panel-title">Active Agents</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)" id="agent-count">4 agents</span>
+    </div>
+    <div class="panel-body">
+      <div class="agent-grid" id="agent-grid"></div>
+    </div>
+
+    <div class="metrics-row" id="metrics-row">
+      <div class="metric"><div class="metric-val" id="m-steps">0</div><div class="metric-lbl">Steps Done</div></div>
+      <div class="metric"><div class="metric-val" id="m-human">0</div><div class="metric-lbl">Human Loops</div></div>
+      <div class="metric"><div class="metric-val" id="m-errors">0</div><div class="metric-lbl">Errors Fixed</div></div>
+      <div class="metric"><div class="metric-val" id="m-auto">—</div><div class="metric-lbl">Autonomy %</div></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Workflow steps -->
+  <div class="center-panel">
+    <div class="panel-header">
+      <span class="panel-title" id="wf-title-header">Employee Onboarding Workflow</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="step-counter" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)">0 / 7 complete</span>
+      </div>
+    </div>
+    <div class="workflow-viz" id="workflow-viz" style="display:none"></div>
+    <div class="input-form" id="input-form"></div>
+    <div class="control-bar">
+      <button class="btn btn-primary" id="btn-run" onclick="runWorkflow()">▶ Run Workflow</button>
+      <button class="btn btn-secondary" id="btn-pause" onclick="pauseWorkflow()" disabled>⏸ Pause</button>
+      <button class="btn btn-danger" id="btn-reset" onclick="resetWorkflow()">↺ Reset</button>
+      <div class="run-status" id="run-status">Ready to execute · <span id="wf-name-status">Employee Onboarding</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Audit trail + SLA -->
+  <div class="panel audit-panel">
+    <div class="panel-header">
+      <span class="panel-title">Audit Trail</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3)" id="audit-count">0 events</span>
+    </div>
+    <div class="panel-body" id="audit-feed-container">
+      <div class="audit-feed" id="audit-feed"></div>
+    </div>
+
+    <div class="sla-section">
+      <div class="sla-title">SLA Health Monitor</div>
+      <div class="sla-meter">
+        <div class="sla-label"><span>Overall Progress</span><span id="sla-overall">0%</span></div>
+        <div class="sla-bar"><div class="sla-fill" id="sla-overall-fill" style="width:0%;background:var(--accent3)"></div></div>
+      </div>
+      <div class="sla-meter">
+        <div class="sla-label"><span>Data Integrity</span><span id="sla-data">100%</span></div>
+        <div class="sla-bar"><div class="sla-fill" id="sla-data-fill" style="width:100%;background:var(--accent3)"></div></div>
+      </div>
+      <div class="sla-meter">
+        <div class="sla-label"><span>Time-to-Complete</span><span id="sla-ttc">On Track</span></div>
+        <div class="sla-bar"><div class="sla-fill" id="sla-ttc-fill" style="width:100%;background:var(--accent3)"></div></div>
+      </div>
+      <div class="sla-meter">
+        <div class="sla-label"><span>Compliance Score</span><span id="sla-comp">100%</span></div>
+        <div class="sla-bar"><div class="sla-fill" id="sla-comp-fill" style="width:100%;background:var(--accent3)"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const WORKFLOWS = [
+  {
+    name: "Employee Onboarding",
+    steps: [
+      { id:"s1", title:"Ingest Employee Record", agent:"data-retrieval", icon:"📥", desc:"Extract new hire details from HRIS and validate schema integrity.", task:"A new employee 'Sarah Chen' (ID: EMP-2024-4821) has joined as Senior Engineer. Extract and validate: full name, department (Engineering), start date (Jan 15), manager (Tom Walsh), location (SF HQ), compensation band (L5). Respond with a structured JSON-like summary and flag any missing fields.", simulateError: false },
+      { id:"s2", title:"Identity & Access Provisioning", agent:"action-execution", icon:"🔐", desc:"Create system accounts, assign role-based permissions, and provision SSO.", task:"For employee Sarah Chen (EMP-2024-4821), Senior Engineer, Engineering dept: provision accounts for GitHub Enterprise, Jira, Confluence, AWS (read-only dev env), Slack, and PagerDuty. Assign to team 'backend-platform'. Generate temporary credentials and access summary. Note any systems requiring manual admin approval.", simulateError: false },
+      { id:"s3", title:"Payroll & Benefits Enrollment", agent:"action-execution", icon:"💳", desc:"Enroll in payroll system and configure benefits package selections.", task:"Enroll Sarah Chen in payroll for L5 compensation band. Configure health insurance (PPO Gold), dental, vision, 401k with 4% company match. Set up direct deposit placeholder. Calculate first paycheck date (Jan 31). Identify if there are any compliance requirements for CA state tax withholding. Summarize enrollment confirmation.", simulateError: false },
+      { id:"s4", title:"Security & Compliance Check", agent:"decision-making", icon:"🛡️", desc:"Run background verification, compliance screening, and security clearance validation.", task:"Run compliance verification for new hire Sarah Chen. Check: (1) Background check status (simulate: returned with one minor discrepancy - an address mismatch from 3 years ago), (2) Export control screening for Engineering access, (3) IP agreement signing status (simulate: PENDING - not yet signed). Make a decision: should onboarding continue, pause for human review, or halt? Explain your reasoning with risk assessment.", simulateError: true, requiresHuman: true, humanMsg: "IP agreement not yet signed — compliance check flags Sarah Chen for manual review before system access is fully granted. Do you approve provisional access?" },
+      { id:"s5", title:"Equipment & Workspace Setup", agent:"action-execution", icon:"💻", desc:"Order hardware, configure dev environment, and assign workspace.", task:"For Sarah Chen joining Jan 15 at SF HQ: order MacBook Pro 16\" M3 Max (standard L5 config), 2x 27\" monitors, ergonomic peripherals. Assign desk 4B-22. Set up dev environment: install standard engineering toolchain (Homebrew, Docker, VSCode, oh-my-zsh), clone onboarding repo. Estimated delivery: Jan 12. Create ticket ITS-2024-0892 for IT setup day.", simulateError: false },
+      { id:"s6", title:"Onboarding Schedule Generation", agent:"decision-making", icon:"📅", desc:"Build personalized 30-day onboarding plan with meetings, trainings, and milestones.", task:"Create a personalized 30-day onboarding schedule for Sarah Chen (Senior Engineer, Engineering, starting Jan 15). Include: Week 1 - orientation sessions, team introductions, codebase walkthrough with Tom Walsh. Week 2 - first PR review cycle, security training (mandatory, 2hr). Week 3 - shadow on-call rotation. Week 4 - first feature assignment. Add key milestones and success metrics. Format as a structured weekly plan.", simulateError: false },
+      { id:"s7", title:"Verification & Audit Seal", agent:"verification", icon:"✅", desc:"Cross-verify all steps completed, generate compliance report, seal audit trail.", task:"Perform final verification for onboarding of Sarah Chen (EMP-2024-4821): confirm all 6 prior steps completed successfully (note: step 4 had a human approval loop for IP agreement). Generate a compliance summary report with: completion status per step, any exceptions or flags, human-in-the-loop interventions, audit hash for immutable record. Declare onboarding COMPLETE or flag remaining blockers.", simulateError: false }
+    ]
+  },
+  {
+    name: "Procurement-to-Payment",
+    steps: [
+      { id:"p1", title:"Purchase Requisition Intake", agent:"data-retrieval", icon:"📋", desc:"Parse and validate incoming purchase requests from departments.", task:"Process purchase requisition PR-2024-8821 from Marketing dept: 50 licenses of Figma Professional ($15/user/month = $750/mo), submitted by Alex Rivera (Director of Design). Validate: budget code (MKT-SOFTWARE-Q1), approval chain, vendor status (Figma Inc - pre-approved vendor), contract terms. Extract all fields and flag any policy violations.", simulateError: false },
+      { id:"p2", title:"Budget & Approval Routing", agent:"decision-making", icon:"💰", desc:"Verify budget availability and route for appropriate approval levels.", task:"For PR-2024-8821 ($750/mo, $9,000/yr): Check Q1 Marketing software budget. Policy: purchases >$5k/yr require VP approval; >$25k require CFO. Figma renewal aligns with existing tooling strategy. Current budget utilization: 67% of Q1 allocation spent. Recommend approval routing and flag if budget is at risk. Make a decision with justification.", simulateError: false },
+      { id:"p3", title:"Vendor Verification", agent:"verification", icon:"🏢", desc:"Verify vendor compliance, security posture, and contract status.", task:"Verify Figma Inc for PR-2024-8821: check SOC2 Type II compliance (last audit: Oct 2023), GDPR data processing agreement status, existing MSA terms, net payment terms (Net-30), preferred vendor status. Run sanctions screening. Identify if new DPA is needed given recent EU adequacy decision updates. Output vendor risk score and recommendation.", simulateError: false },
+      { id:"p4", title:"PO Generation & Dispatch", agent:"action-execution", icon:"📤", desc:"Auto-generate purchase order and dispatch to vendor.", task:"Generate PO PO-2024-9944 for Figma Inc: 50 Professional licenses, $750/month, 12-month term starting Feb 1, Net-30 payment. Include billing address (HQ), cost center MKT-001, GL code 6210-SOFTWARE. Add standard terms. Create in ERP system, assign to AP queue, notify vendor contact (procurement@figma.com). Generate PDF summary of PO.", simulateError: false },
+      { id:"p5", title:"Invoice Matching & Validation", agent:"verification", icon:"🔍", desc:"3-way match: PO, receipt, and invoice validation.", task:"Validate invoice INV-FIG-2024-0221 from Figma ($750.00, due Feb 28): perform 3-way match against PO PO-2024-9944 and license delivery confirmation. Check: amounts match ✓, vendor ID match ✓, quantity (50 licenses) ✓, simulate: GST tax line item $67.50 unexpected - not in PO. Flag discrepancy and recommend action: pay as-is, request credit note, or hold payment.", simulateError: true },
+      { id:"p6", title:"Payment Execution & Closure", agent:"action-execution", icon:"✅", desc:"Execute payment and close procurement cycle with audit record.", task:"Execute payment for INV-FIG-2024-0221 (net amount $750 after resolving tax discrepancy via credit note CN-FIG-001). Schedule ACH transfer for Feb 28. Update ERP: mark PO closed, link invoice, record payment PAY-2024-1122. Generate procurement cycle summary: total cycle time, exceptions handled, audit trail hash. Mark PR-2024-8821 as FULFILLED.", simulateError: false }
+    ]
+  },
+  {
+    name: "Contract Lifecycle Mgmt",
+    steps: [
+      { id:"c1", title:"Contract Intake & Classification", agent:"data-retrieval", icon:"📄", desc:"Ingest contract document, extract metadata, classify type and risk tier.", task:"Ingest new contract: Master Service Agreement with CloudScale Inc for cloud infrastructure services. Extract: parties (Acme Corp + CloudScale Inc), value ($240k/yr), term (3 years, auto-renewal), governing law (Delaware), services (compute, storage, CDN). Classify: contract type (MSA+SOW), risk tier (HIGH - value >$100k, multi-year, auto-renewal clause). Flag key dates and obligations.", simulateError: false },
+      { id:"c2", title:"Risk & Clause Analysis", agent:"decision-making", icon:"⚖️", desc:"AI analysis of contract clauses for risk, unusual terms, and negotiation flags.", task:"Analyze MSA with CloudScale Inc for legal/business risk. Review key clauses: (1) Liability cap: limited to 3 months fees ($60k) - FLAG: low vs. $240k/yr exposure. (2) Data processing: CloudScale may share anonymized usage data with 'partners' - FLAG: privacy risk. (3) SLA: 99.5% uptime with service credits capped at 10% - ASSESS: acceptable? (4) Termination for convenience: 90-day notice. Provide risk summary and negotiation priorities.", simulateError: false },
+      { id:"c3", title:"Stakeholder Review Routing", agent:"action-execution", icon:"👥", desc:"Route contract to legal, security, finance, and business owner for review.", task:"Route CloudScale MSA (CLM-2024-0441) for parallel review: Legal (liability cap, data clause - 5 business days), InfoSec (data sharing, security addendum required - 3 days), Finance (payment terms, budget approval $240k - 2 days), CTO Office (technical SLA, vendor dependency - 2 days). Create review tracker, set deadline Jan 20, configure escalation for non-responses after 3 days. Send notification emails with review links.", simulateError: false },
+      { id:"c4", title:"Redline Consolidation", agent:"decision-making", icon:"✏️", desc:"Consolidate all reviewer redlines and resolve conflicts between departments.", task:"Consolidate review feedback on CloudScale MSA: Legal wants liability cap raised to 12 months ($240k). InfoSec requires data processing addendum (DPA) - non-negotiable. Finance: payment terms Net-30 acceptable, budget approved. CTO: SLA 99.5% acceptable but wants incident response SLA added (4hr response). Conflict: Legal wants force majeure expanded, Finance wants it narrowed for payment obligations. Recommend resolution strategy and redline priorities.", simulateError: false },
+      { id:"c5", title:"Negotiation Tracking", agent:"action-execution", icon:"🤝", desc:"Track negotiation rounds, version control redlines, sent to counterparty.", task:"Send redlined MSA v2 to CloudScale Inc (legal@cloudscale.io). Key changes: (1) Liability cap: proposed 12 months, (2) DPA: attached as Exhibit C, (3) Incident SLA: 4hr response added to Schedule 1, (4) Force majeure: accepted Legal's expanded language. Create negotiation log NL-2024-0441-v2. Set follow-up reminder for 5 business days. Track: 3 open issues, 2 closed. Estimate 1-2 more rounds.", simulateError: false },
+      { id:"c6", title:"Execution & Repository Filing", agent:"action-execution", icon:"🖊️", desc:"DocuSign execution, file to contract repository, set renewal alerts.", task:"CloudScale accepted all redlines (v3 - final). Prepare for execution: generate clean MSA v3, route to CEO (signing authority for >$100k) via DocuSign, cc Legal and Finance. Upon execution: file to CLM repository under VENDOR/INFRASTRUCTURE/2024, set calendar alerts (90-day pre-renewal notice: Oct 2, 2026; contract expiry: Jan 1, 2027). Extract obligations tracker: quarterly business reviews, annual security audit rights. Close CLM-2024-0441.", simulateError: false },
+      { id:"c7", title:"Obligation Monitoring Setup", agent:"verification", icon:"📊", desc:"Configure ongoing obligation tracking, SLA monitoring, and renewal workflow.", task:"Set up post-execution monitoring for CloudScale MSA: configure SLA dashboard (uptime tracking, incident log), schedule QBR calendar invites (April, July, Oct, Jan), set obligation reminders (annual security audit request: Dec 1), configure auto-renewal workflow trigger (90-day notice Oct 2, 2026 → stakeholder vote → renew/renegotiate/terminate). Verify all CLM records complete. Generate contract summary card for exec dashboard.", simulateError: false },
+      { id:"c8", title:"Audit & Compliance Seal", agent:"verification", icon:"✅", desc:"Final audit of contract lifecycle, generate immutable compliance record.", task:"Perform final audit of CLM-2024-0441 (CloudScale MSA): verify all 7 prior stages completed, all required approvals obtained (Legal ✓, InfoSec ✓, Finance ✓, CTO ✓, CEO ✓), DPA executed, repository filing confirmed, obligation monitors active. Generate compliance certificate with: lifecycle summary, negotiation log hash, signer verification, regulatory compliance (GDPR DPA in place). Mark contract lifecycle COMPLETE.", simulateError: false }
+    ]
+  }
+];
+
+// ── INPUT FORM DEFINITIONS ─────────────────────────────────────────
+const WORKFLOW_INPUTS = [
+  {
+    sections: [
+      {
+        title: "New Hire Details",
+        fields: [
+          { id:"emp_name",    label:"Full Name",         type:"text",   placeholder:"e.g. Sarah Chen",         default:"Sarah Chen" },
+          { id:"emp_id",      label:"Employee ID",       type:"text",   placeholder:"e.g. EMP-2024-4821",      default:"EMP-2024-4821" },
+          { id:"emp_role",    label:"Job Title",         type:"text",   placeholder:"e.g. Senior Engineer",    default:"Senior Engineer" },
+          { id:"emp_dept",    label:"Department",        type:"select", options:["Engineering","Marketing","Finance","Legal","Operations","HR","Product","Design"], default:"Engineering" },
+          { id:"emp_start",   label:"Start Date",        type:"text",   placeholder:"e.g. Jan 15",             default:"Jan 15" },
+          { id:"emp_manager", label:"Manager Name",      type:"text",   placeholder:"e.g. Tom Walsh",          default:"Tom Walsh" },
+          { id:"emp_level",   label:"Comp Band / Level", type:"select", options:["L3","L4","L5","L6","L7","Director","VP"], default:"L5" },
+          { id:"emp_office",  label:"Office Location",   type:"select", options:["SF HQ","NYC Office","London","Remote","Bangalore","Singapore"], default:"SF HQ" }
+        ]
+      },
+      {
+        title: "IT & Access",
+        fields: [
+          { id:"emp_team",    label:"Team / Squad",      type:"text",   placeholder:"e.g. backend-platform",   default:"backend-platform" },
+          { id:"emp_laptop",  label:"Hardware Config",   type:"select", options:["MacBook Pro 16\" M3 Max","MacBook Pro 14\" M3","MacBook Air M2","Dell XPS 15","ThinkPad X1 Carbon"], default:"MacBook Pro 16\" M3 Max" }
+        ]
+      }
+    ],
+    buildTasks: (f) => [
+      `A new employee '${f.emp_name}' (ID: ${f.emp_id}) has joined as ${f.emp_role}. Extract and validate: full name, department (${f.emp_dept}), start date (${f.emp_start}), manager (${f.emp_manager}), location (${f.emp_office}), compensation band (${f.emp_level}). Respond with a structured JSON-like summary and flag any missing fields.`,
+      `For employee ${f.emp_name} (${f.emp_id}), ${f.emp_role}, ${f.emp_dept} dept: provision accounts for GitHub Enterprise, Jira, Confluence, AWS (read-only dev env), Slack, and PagerDuty. Assign to team '${f.emp_team}'. Generate temporary credentials and access summary. Note any systems requiring manual admin approval.`,
+      `Enroll ${f.emp_name} in payroll for ${f.emp_level} compensation band. Configure health insurance (PPO Gold), dental, vision, 401k with 4% company match. Set up direct deposit placeholder. Calculate first paycheck date based on start date ${f.emp_start}. Identify compliance requirements for ${f.emp_office} tax withholding. Summarize enrollment confirmation.`,
+      `Run compliance verification for new hire ${f.emp_name}. Check: (1) Background check status (simulate: returned with one minor discrepancy - an address mismatch from 3 years ago), (2) Export control screening for ${f.emp_dept} access, (3) IP agreement signing status (simulate: PENDING - not yet signed). Make a decision: should onboarding continue, pause for human review, or halt? Explain your reasoning with risk assessment.`,
+      `For ${f.emp_name} joining ${f.emp_start} at ${f.emp_office}: order ${f.emp_laptop}, 2x 27" monitors, ergonomic peripherals. Assign workspace. Set up dev environment with standard ${f.emp_dept} toolchain. Create IT setup ticket. Summarize equipment order and delivery estimate.`,
+      `Create a personalized 30-day onboarding schedule for ${f.emp_name} (${f.emp_role}, ${f.emp_dept}, starting ${f.emp_start}). Include: Week 1 - orientation sessions, team introductions, codebase walkthrough with ${f.emp_manager}. Week 2 - first work cycle, security training (mandatory, 2hr). Week 3 - shadow on-call/core processes. Week 4 - first real assignment. Add key milestones and success metrics. Format as a structured weekly plan.`,
+      `Perform final verification for onboarding of ${f.emp_name} (${f.emp_id}): confirm all 6 prior steps completed successfully (note: step 4 had a human approval loop for IP agreement). Generate a compliance summary report with: completion status per step, any exceptions or flags, human-in-the-loop interventions, audit hash for immutable record. Declare onboarding COMPLETE or flag remaining blockers.`
+    ],
+    humanMsg: (f) => `IP agreement not yet signed — compliance check flags ${f.emp_name} for manual review before system access is fully granted. Do you approve provisional access?`
+  },
+  {
+    sections: [
+      {
+        title: "Purchase Request",
+        fields: [
+          { id:"pr_vendor",   label:"Vendor / Supplier",  type:"text",   placeholder:"e.g. Figma Inc",          default:"Figma Inc" },
+          { id:"pr_product",  label:"Product / Service",  type:"text",   placeholder:"e.g. Figma Professional", default:"Figma Professional" },
+          { id:"pr_qty",      label:"Quantity",           type:"text",   placeholder:"e.g. 50",                 default:"50" },
+          { id:"pr_unit",     label:"Unit",               type:"select", options:["licenses","seats","units","subscriptions","hours","months"], default:"licenses" },
+          { id:"pr_price",    label:"Unit Price ($/mo)",  type:"text",   placeholder:"e.g. 15",                 default:"15" },
+          { id:"pr_dept",     label:"Requesting Dept",    type:"select", options:["Engineering","Marketing","Finance","Legal","Operations","HR","Product","Design"], default:"Marketing" },
+          { id:"pr_requester",label:"Requested By",       type:"text",   placeholder:"e.g. Alex Rivera",        default:"Alex Rivera" },
+          { id:"pr_title",    label:"Requester Title",    type:"text",   placeholder:"e.g. Director of Design", default:"Director of Design" }
+        ]
+      },
+      {
+        title: "Budget & Payment",
+        fields: [
+          { id:"pr_budget",   label:"Budget Code",        type:"text",   placeholder:"e.g. MKT-SOFTWARE-Q1",   default:"MKT-SOFTWARE-Q1" },
+          { id:"pr_terms",    label:"Payment Terms",      type:"select", options:["Net-30","Net-60","Net-15","Immediate","Net-90"], default:"Net-30" }
+        ]
+      }
+    ],
+    buildTasks: (f) => {
+      const monthly = parseFloat(f.pr_price) * parseInt(f.pr_qty);
+      const annual = monthly * 12;
+      return [
+        `Process purchase requisition from ${f.pr_dept} dept: ${f.pr_qty} ${f.pr_unit} of ${f.pr_product} ($${f.pr_price}/unit/month = $${monthly}/mo), submitted by ${f.pr_requester} (${f.pr_title}). Validate: budget code (${f.pr_budget}), approval chain, vendor status (${f.pr_vendor}), contract terms. Extract all fields and flag any policy violations.`,
+        `For this purchase ($${monthly}/mo, $${annual}/yr): Check ${f.pr_dept} software budget. Policy: purchases >$5k/yr require VP approval; >$25k require CFO. Assess if ${f.pr_product} from ${f.pr_vendor} aligns with existing tooling strategy. Make a decision on approval routing with justification.`,
+        `Verify ${f.pr_vendor} for this purchase: check SOC2 Type II compliance, GDPR data processing agreement status, existing MSA terms, payment terms (${f.pr_terms}), preferred vendor status. Run sanctions screening. Identify if new DPA is needed. Output vendor risk score and recommendation.`,
+        `Generate PO for ${f.pr_vendor}: ${f.pr_qty} ${f.pr_unit} of ${f.pr_product}, $${monthly}/month, 12-month term, ${f.pr_terms} payment. Include billing address (HQ), cost center, GL code. Create in ERP system, assign to AP queue, notify vendor. Generate PO summary.`,
+        `Validate invoice from ${f.pr_vendor} ($${monthly}.00): perform 3-way match against PO and delivery confirmation. Check: amounts match, vendor ID match, quantity (${f.pr_qty} ${f.pr_unit}). Simulate: GST tax line item ${Math.round(monthly*0.09)} unexpected - not in PO. Flag discrepancy and recommend action: pay as-is, request credit note, or hold payment.`,
+        `Execute payment for invoice (net amount $${monthly} after resolving tax discrepancy via credit note). Schedule ACH transfer. Update ERP: mark PO closed, link invoice, record payment. Generate procurement cycle summary: total cycle time, exceptions handled, audit trail hash. Mark purchase as FULFILLED.`
+      ];
+    },
+    humanMsg: () => null
+  },
+  {
+    sections: [
+      {
+        title: "Contract Parties",
+        fields: [
+          { id:"ct_party",    label:"Your Company Name",  type:"text",   placeholder:"e.g. Acme Corp",          default:"Acme Corp" },
+          { id:"ct_vendor",   label:"Counterparty Name",  type:"text",   placeholder:"e.g. CloudScale Inc",     default:"CloudScale Inc" },
+          { id:"ct_service",  label:"Service / Product",  type:"text",   placeholder:"e.g. cloud infrastructure",default:"cloud infrastructure" },
+          { id:"ct_type",     label:"Contract Type",      type:"select", options:["MSA","SaaS Subscription","Professional Services","NDA","SOW","Partnership Agreement","Licensing"], default:"MSA" }
+        ]
+      },
+      {
+        title: "Commercial Terms",
+        fields: [
+          { id:"ct_value",    label:"Annual Contract Value ($)", type:"text", placeholder:"e.g. 240000",        default:"240000" },
+          { id:"ct_term",     label:"Contract Term",      type:"select", options:["1 year","2 years","3 years","Month-to-month","5 years"], default:"3 years" },
+          { id:"ct_renewal",  label:"Auto-Renewal",       type:"select", options:["Yes – 90-day notice to cancel","Yes – 30-day notice","No – manual renewal","Yes – 60-day notice"], default:"Yes – 90-day notice to cancel" },
+          { id:"ct_law",      label:"Governing Law",      type:"select", options:["Delaware","California","New York","England & Wales","Singapore","Ireland"], default:"Delaware" }
+        ]
+      }
+    ],
+    buildTasks: (f) => [
+      `Ingest new contract: ${f.ct_type} with ${f.ct_vendor} for ${f.ct_service}. Extract: parties (${f.ct_party} + ${f.ct_vendor}), value ($${parseInt(f.ct_value).toLocaleString()}/yr), term (${f.ct_term}, auto-renewal: ${f.ct_renewal}), governing law (${f.ct_law}), services (${f.ct_service}). Classify: contract type (${f.ct_type}), risk tier based on value and term. Flag key dates and obligations.`,
+      `Analyze ${f.ct_type} with ${f.ct_vendor} for legal/business risk. Review key clauses: (1) Liability cap relative to $${parseInt(f.ct_value).toLocaleString()}/yr exposure - assess adequacy, (2) Data processing terms - flag any data sharing with third parties, (3) SLA and uptime commitments - are service credits adequate? (4) Termination for convenience and notice periods. (5) Auto-renewal terms: ${f.ct_renewal}. Provide risk summary and negotiation priorities.`,
+      `Route ${f.ct_vendor} ${f.ct_type} for parallel stakeholder review: Legal (liability, data clause - 5 business days), InfoSec (data security addendum - 3 days), Finance (payment terms, budget approval $${parseInt(f.ct_value).toLocaleString()} - 2 days), Business Owner (commercial terms, vendor dependency - 2 days). Create review tracker, set deadline, configure escalation for non-responses after 3 days.`,
+      `Consolidate review feedback on ${f.ct_vendor} ${f.ct_type}: synthesize input from Legal, InfoSec, Finance, and Business Owner. Identify conflicts between departments' positions. For each conflict, recommend a resolution strategy that balances legal protection, security requirements, financial constraints, and business needs. Prioritize redlines by importance.`,
+      `Send redlined ${f.ct_type} v2 to ${f.ct_vendor}. Summarize key changes proposed: liability cap adjustment, data processing addendum, SLA improvements, force majeure language. Create negotiation log. Set follow-up reminder for 5 business days. Track open vs closed issues. Estimate remaining negotiation rounds.`,
+      `${f.ct_vendor} accepted all redlines (v3 - final). Prepare ${f.ct_type} for execution: route to signing authority (CEO/CLO for contracts >$100k) via DocuSign. Upon execution: file to contract repository, set calendar alerts based on ${f.ct_renewal} auto-renewal terms and contract end date (${f.ct_term} from today). Extract obligations tracker. Close contract lifecycle record.`,
+      `Set up post-execution monitoring for ${f.ct_vendor} ${f.ct_type}: configure SLA dashboard, schedule quarterly business reviews, set obligation reminders, configure auto-renewal workflow trigger based on "${f.ct_renewal}" clause. Verify all contract records complete. Generate contract summary card for exec dashboard.`,
+      `Perform final audit of ${f.ct_vendor} ${f.ct_type} lifecycle: verify all 7 prior stages completed, all required approvals obtained, DPA executed (if applicable), repository filing confirmed, obligation monitors active. Generate compliance certificate: lifecycle summary, negotiation log hash, signer verification, regulatory compliance. Mark contract lifecycle COMPLETE.`
+    ],
+    humanMsg: () => null
+  }
+];
+
+
+const AGENTS = [
+  { id:"orchestrator", name:"Orchestrator", role:"Workflow Manager", icon:"🧠", color:"var(--accent)" },
+  { id:"data-retrieval", name:"Data Retrieval", role:"Information Extraction", icon:"📡", color:"#60a5fa" },
+  { id:"decision-making", name:"Decision Engine", role:"Analysis & Judgment", icon:"⚡", color:"var(--accent2)" },
+  { id:"action-execution", name:"Action Executor", role:"System Integration", icon:"⚙️", color:"var(--warn)" },
+  { id:"verification", name:"Verification", role:"Quality & Audit", icon:"🔍", color:"var(--accent3)" }
+];
+
+// ── STATE ──────────────────────────────────────────────────────────
+let state = {
+  workflowIdx: 0,
+  running: false,
+  paused: false,
+  currentStep: -1,
+  stepResults: {},
+  stepStatuses: {},
+  stepErrors: {},
+  auditLog: [],
+  metrics: { steps:0, human:0, errors:0 },
+  agentStatuses: {},
+  sla: { overall:0, data:100, ttc:100, comp:100 },
+  abortController: null,
+  humanPending: false,
+  humanResolve: null
+};
+
+// ── CLOCK ──────────────────────────────────────────────────────────
+setInterval(()=>{
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toTimeString().slice(0,8);
+},1000);
+
+// ── RENDER INPUT FORM ──────────────────────────────────────────────
+function renderInputForm(idx) {
+  const def = WORKFLOW_INPUTS[idx];
+  const wf  = WORKFLOWS[idx];
+  const container = document.getElementById('input-form');
+
+  let html = `<div class="form-intro">
+    ✦ Customize the data below — the AI agents will use your inputs to generate real, personalized outputs. All fields have defaults if you just want to run immediately.
+  </div>`;
+
+  def.sections.forEach(sec => {
+    html += `<div class="form-section"><div class="form-section-title">${sec.title}</div>`;
+    // Pair fields into rows of 2
+    for (let i = 0; i < sec.fields.length; i += 2) {
+      const pair = sec.fields.slice(i, i+2);
+      const full = pair.length === 1 ? ' full' : '';
+      html += `<div class="form-row${full}">`;
+      pair.forEach(f => {
+        html += `<div class="form-field">
+          <label class="form-label">${f.label}</label>`;
+        if (f.type === 'select') {
+          html += `<select class="form-input" id="fi_${f.id}">
+            ${f.options.map(o=>`<option value="${o}"${o===f.default?' selected':''}>${o}</option>`).join('')}
+          </select>`;
+        } else {
+          html += `<input type="text" class="form-input" id="fi_${f.id}" placeholder="${f.placeholder}" value="${f.default}">`;
+        }
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+  document.getElementById('workflow-viz').style.display = 'none';
+}
+
+function getFormValues(idx) {
+  const def = WORKFLOW_INPUTS[idx];
+  const vals = {};
+  def.sections.forEach(sec => {
+    sec.fields.forEach(f => {
+      const el = document.getElementById('fi_' + f.id);
+      vals[f.id] = el ? el.value.trim() || f.default : f.default;
+    });
+  });
+  return vals;
+}
+
+// ── WORKFLOW SELECT ────────────────────────────────────────────────
+function selectWorkflow(idx, el) {
+  if (state.running) return;
+  state.workflowIdx = idx;
+  document.querySelectorAll('.workflow-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const wf = WORKFLOWS[idx];
+  document.getElementById('wf-title-header').textContent = wf.name + ' Workflow';
+  document.getElementById('wf-name-status').textContent = wf.name;
+  document.getElementById('step-counter').textContent = `0 / ${wf.steps.length} complete`;
+  // Reset state but keep form visible
+  state.stepResults = {};
+  state.stepStatuses = {};
+  state.stepErrors = {};
+  state.auditLog = [];
+  state.metrics = {steps:0,human:0,errors:0};
+  state.agentStatuses = {};
+  state.humanPending = false;
+  state.humanResolve = null;
+  state.sla = {overall:0,data:100,ttc:100,comp:100};
+  document.getElementById('audit-feed').innerHTML = '';
+  document.getElementById('audit-count').textContent = '0 events';
+  ['overall','data','ttc','comp'].forEach(k=>{
+    const v = k==='overall'?0:100;
+    if(k==='ttc'){document.getElementById('sla-ttc').textContent='On Track';}
+    else document.getElementById(`sla-${k}`).textContent=v+'%';
+    document.getElementById(`sla-${k}-fill`).style.cssText=`width:${v}%;background:var(--accent3)`;
+  });
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+  document.getElementById('system-status').textContent = 'Standby';
+  document.getElementById('system-dot').className = 'dot dot-amber';
+  document.getElementById('run-status').innerHTML = `Ready to execute · <span>${wf.name}</span>`;
+  renderAgents();
+  updateMetrics();
+  renderInputForm(idx);
+}
+
+// ── RENDER AGENTS ──────────────────────────────────────────────────
+function renderAgents() {
+  const grid = document.getElementById('agent-grid');
+  grid.innerHTML = AGENTS.map(a=>{
+    const st = state.agentStatuses[a.id] || 'idle';
+    const cls = st==='running'?'active-agent':st==='done'?'done-agent':st==='error'?'error-agent':'';
+    const stLabel = st==='retrying'?'retrying':st;
+    const prog = state.agentStatuses[a.id+'_prog'] || 0;
+    return `<div class="agent-card ${cls}" id="agent-${a.id}">
+      <div class="agent-header">
+        <div class="agent-name">${a.icon} ${a.name}</div>
+        <div class="agent-status status-${st}">${stLabel}</div>
+      </div>
+      <div class="agent-role">${a.role}</div>
+      ${st==='running'?`<div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER STEPS ───────────────────────────────────────────────────
+function renderSteps() {
+  const wf = WORKFLOWS[state.workflowIdx];
+  const viz = document.getElementById('workflow-viz');
+  const total = wf.steps.length;
+
+  viz.innerHTML = `<div class="steps-container">${wf.steps.map((step,i)=>{
+    const st = state.stepStatuses[step.id] || 'pending';
+    const iconCls = `si-${st}`;
+    const prevDone = i>0 && (state.stepStatuses[wf.steps[i-1].id]==='done'||state.stepStatuses[wf.steps[i-1].id]==='skipped');
+    const lineCls = prevDone?'sl-done':(st==='running'?'sl-active':'');
+
+    const icons = {pending:'○',running:'◉',done:'●',error:'✕',retrying:'↻',skipped:'—'};
+    const icon = icons[st]||'○';
+
+    const result = state.stepResults[step.id]||'';
+    const err = state.stepErrors[step.id]||'';
+
+    return `<div class="step-row" id="step-row-${step.id}">
+      <div class="step-connector">
+        ${i>0?`<div class="step-line ${lineCls}" style="margin-bottom:0;margin-top:0;flex:none;height:32px"></div>`:''}
+        <div class="step-icon ${iconCls}">${st==='running'?'◉':step.icon}</div>
+        ${i<total-1?`<div class="step-line ${st==='done'?'sl-done':st==='running'?'sl-active':''}" style="flex:1;min-height:40px"></div>`:''}
+      </div>
+      <div class="step-content">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+          <div class="step-title">${step.title}</div>
+          ${st!=='pending'?`<div class="agent-status status-${st}" style="font-size:9px;padding:1px 6px">${st}</div>`:''}
+        </div>
+        <div class="step-agent-tag">Agent: ${step.agent} · Step ${i+1}/${total}</div>
+        <div class="step-description">${step.desc}</div>
+        ${err?`<div class="error-banner">⚠ ${err}</div>`:''}
+        ${st==='retrying'?`<div class="retry-banner">↻ Agent self-correcting — retrying with adjusted parameters...</div>`:''}
+        ${step.requiresHuman && st==='running' && state.humanPending?renderHumanLoop(step):''}
+        ${result?`<div class="step-output visible" id="output-${step.id}">${result}</div>`:''}
+        ${st==='running'&&!state.humanPending?`<div class="thinking-box"><div class="typing"><span></span><span></span><span></span></div> ${AGENTS.find(a=>a.id===step.agent)?.name||'Agent'} is processing...</div>`:''}
+      </div>
+    </div>`;
+  }).join('')}
+
+  ${Object.values(state.stepStatuses).filter(s=>s==='done').length===total?`
+    <div class="complete-banner">
+      <div class="complete-title">✓ Workflow Complete</div>
+      <div class="complete-sub">${total} steps · ${state.metrics.human} human loop(s) · ${state.metrics.errors} error(s) auto-recovered · ${Math.round(((total-state.metrics.human)/total)*100)}% autonomous</div>
+    </div>
+  `:''}
+  </div>`;
+}
+
+function renderHumanLoop(step) {
+  return `<div class="human-loop">
+    <div class="human-loop-title">⚠ Human Review Required</div>
+    <p>${step.humanMsg||'This step requires manual approval before proceeding.'}</p>
+    <button class="btn-approve" onclick="resolveHuman(true)">✓ Approve & Continue</button>
+    <button class="btn-reject" onclick="resolveHuman(false)">✕ Reject & Halt</button>
+  </div>`;
+}
+
+function resolveHuman(approved) {
+  if (state.humanResolve) {
+    state.humanResolve(approved);
+    state.humanResolve = null;
+    state.humanPending = false;
+  }
+}
+
+// ── AUDIT LOG ──────────────────────────────────────────────────────
+function addAudit(type, agent, text) {
+  const now = new Date().toTimeString().slice(0,8);
+  state.auditLog.unshift({type, agent, text, time:now});
+  document.getElementById('audit-count').textContent = state.auditLog.length + ' events';
+
+  const feed = document.getElementById('audit-feed');
+  const el = document.createElement('div');
+  el.className = `audit-entry type-${type}`;
+  el.innerHTML = `<div class="audit-time">${now}</div>
+    <div class="audit-text"><span class="audit-agent">[${agent}]</span> ${text}</div>`;
+  feed.insertBefore(el, feed.firstChild);
+}
+
+// ── METRICS UPDATE ─────────────────────────────────────────────────
+function updateMetrics() {
+  document.getElementById('m-steps').textContent = state.metrics.steps;
+  document.getElementById('m-human').textContent = state.metrics.human;
+  document.getElementById('m-errors').textContent = state.metrics.errors;
+  const total = WORKFLOWS[state.workflowIdx].steps.length;
+  const auto = total>0?Math.round(((state.metrics.steps - state.metrics.human)/Math.max(state.metrics.steps,1))*100):0;
+  document.getElementById('m-auto').textContent = state.metrics.steps>0?auto+'%':'—';
+
+  const pct = Math.round((state.metrics.steps/total)*100);
+  state.sla.overall = pct;
+  document.getElementById('sla-overall').textContent = pct+'%';
+  document.getElementById('sla-overall-fill').style.width = pct+'%';
+  document.getElementById('step-counter').textContent = `${state.metrics.steps} / ${total} complete`;
+}
+
+// ── CALL CLAUDE API ────────────────────────────────────────────────
+async function callClaude(systemPrompt, userPrompt) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role:"user", content: userPrompt }]
+    })
+  });
+  const data = await response.json();
+  if (!data.content) throw new Error(data.error?.message||'API error');
+  return data.content.map(b=>b.text||'').join('');
+}
+
+// ── SLEEP ──────────────────────────────────────────────────────────
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+function waitForHuman() {
+  return new Promise(resolve => {
+    state.humanResolve = resolve;
+    state.humanPending = true;
+  });
+}
+
+// ── SET AGENT STATUS ───────────────────────────────────────────────
+function setAgent(id, status, prog=0) {
+  state.agentStatuses[id] = status;
+  state.agentStatuses[id+'_prog'] = prog;
+  renderAgents();
+}
+
+// ── RUN WORKFLOW ───────────────────────────────────────────────────
+async function runWorkflow() {
+  if (state.running) return;
+  state.running = true;
+  state.paused = false;
+
+  // Get user inputs and generate personalised tasks
+  const idx = state.workflowIdx;
+  const formVals = getFormValues(idx);
+  const userTasks = WORKFLOW_INPUTS[idx].buildTasks(formVals);
+  const humanMsg  = WORKFLOW_INPUTS[idx].humanMsg(formVals);
+
+  // Inject user tasks into workflow steps
+  const wf = WORKFLOWS[idx];
+  wf.steps.forEach((step, i) => {
+    if (userTasks[i]) step.task = userTasks[i];
+    if (humanMsg && step.requiresHuman) step.humanMsg = humanMsg;
+  });
+
+  // Hide form, show viz
+  document.getElementById('input-form').style.display = 'none';
+  document.getElementById('workflow-viz').style.display = 'block';
+
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-pause').disabled = false;
+  document.getElementById('system-dot').className = 'dot dot-green';
+  document.getElementById('system-status').textContent = 'Running';
+
+  addAudit('info','Orchestrator',`Initiated workflow: <em>${wf.name}</em> · ${wf.steps.length} steps`);
+  setAgent('orchestrator','running');
+
+  for (let i=0; i<wf.steps.length; i++) {
+    if (!state.running) break;
+
+    const step = wf.steps[i];
+    state.stepStatuses[step.id] = 'running';
+    document.getElementById('run-status').innerHTML = `Step ${i+1}/${wf.steps.length}: <span>${step.title}</span>`;
+    renderSteps();
+
+    setAgent('orchestrator','running', Math.round(((i+0.5)/wf.steps.length)*100));
+    setAgent(step.agent,'running',30);
+    addAudit('agent', AGENTS.find(a=>a.id===step.agent)?.name||step.agent, `Starting: <em>${step.title}</em>`);
+
+    // Simulate error on designated step
+    if (step.simulateError) {
+      await sleep(1200);
+      setAgent(step.agent,'running',60);
+      addAudit('error', AGENTS.find(a=>a.id===step.agent)?.name, `Error detected in <em>${step.title}</em> — initiating self-correction`);
+      state.stepErrors[step.id] = 'Initial attempt failed: data validation error. Agent self-correcting...';
+      state.stepStatuses[step.id] = 'retrying';
+      state.metrics.errors++;
+      state.sla.data = 72;
+      document.getElementById('sla-data').textContent='72%';
+      document.getElementById('sla-data-fill').style.cssText='width:72%;background:var(--warn)';
+      renderSteps();
+      await sleep(1500);
+      addAudit('recovery', AGENTS.find(a=>a.id===step.agent)?.name, `Self-correction applied — retrying with adjusted parameters`);
+      state.stepErrors[step.id] = '';
+      state.stepStatuses[step.id] = 'running';
+      state.sla.data = 88;
+      document.getElementById('sla-data').textContent='88%';
+      document.getElementById('sla-data-fill').style.cssText='width:88%;background:var(--warn)';
+      renderSteps();
+    }
+
+    // Human loop
+    if (step.requiresHuman) {
+      addAudit('decision','Decision Engine',`Escalating to human review: <em>${step.title}</em>`);
+      state.humanPending = true;
+      renderSteps();
+      const approved = await waitForHuman();
+      state.metrics.human++;
+      state.sla.comp = 95;
+      document.getElementById('sla-comp').textContent='95%';
+      document.getElementById('sla-comp-fill').style.cssText='width:95%;background:var(--warn)';
+      if (!approved) {
+        state.stepStatuses[step.id]='error';
+        state.stepResults[step.id]='⚠ Workflow halted by human reviewer. Step rejected.';
+        addAudit('error','Human','Workflow halted — step rejected by reviewer');
+        state.running=false;
+        document.getElementById('btn-run').disabled=false;
+        document.getElementById('btn-pause').disabled=true;
+        document.getElementById('system-status').textContent='Halted';
+        document.getElementById('system-dot').className='dot dot-red';
+        renderSteps();
+        updateMetrics();
+        return;
+      }
+      addAudit('decision','Human',`Approved: <em>${step.title}</em> — proceeding with provisional access`);
+    }
+
+    setAgent(step.agent,'running',80);
+
+    // Call Claude
+    const systemPrompt = `You are the ${AGENTS.find(a=>a.id===step.agent)?.name||step.agent} agent in a multi-agent enterprise workflow system called NEXUS. You are processing step ${i+1} of ${wf.steps.length} in the "${wf.name}" workflow. Be concise, structured, and professional. Use short headers or bullet points. Maximum 200 words. Format output cleanly — no markdown asterisks, use plain text structure.`;
+
+    let result;
+    try {
+      result = await callClaude(systemPrompt, step.task);
+    } catch(e) {
+      result = `[Simulated agent output]\n\nStep "${step.title}" processed successfully.\n\nKey actions taken:\n• Validated all required fields and dependencies\n• Executed step-specific operations within system parameters\n• Generated confirmation artifacts for audit trail\n• All checks passed — proceeding to next step`;
+    }
+
+    state.stepResults[step.id] = result;
+    state.stepStatuses[step.id] = 'done';
+    state.metrics.steps++;
+    setAgent(step.agent,'done');
+
+    addAudit('success', AGENTS.find(a=>a.id===step.agent)?.name, `Completed: <em>${step.title}</em>`);
+
+    // Audit decision log for decision-making steps
+    if (step.agent==='decision-making') {
+      addAudit('decision','Decision Engine',`Decision recorded for audit: <em>${step.title}</em> — see output`);
+    }
+
+    // Restore SLA
+    if (step.simulateError) {
+      await sleep(500);
+      state.sla.data=96;
+      document.getElementById('sla-data').textContent='96%';
+      document.getElementById('sla-data-fill').style.cssText='width:96%;background:var(--accent3)';
+    }
+
+    renderSteps();
+    updateMetrics();
+    await sleep(600);
+  }
+
+  // Done
+  if (state.running) {
+    setAgent('orchestrator','done');
+    state.sla.overall=100;
+    document.getElementById('sla-overall').textContent='100%';
+    document.getElementById('sla-overall-fill').style.cssText='width:100%;background:var(--accent3)';
+    document.getElementById('sla-comp').textContent='100%';
+    document.getElementById('sla-comp-fill').style.cssText='width:100%;background:var(--accent3)';
+    addAudit('success','Orchestrator',`Workflow <em>${WORKFLOWS[state.workflowIdx].name}</em> completed — audit trail sealed`);
+    document.getElementById('run-status').innerHTML=`<span style="color:var(--accent3)">✓ Complete</span> · ${state.metrics.steps} steps · ${state.metrics.human} human loop(s)`;
+    document.getElementById('system-status').textContent='Complete';
+    document.getElementById('system-dot').className='dot dot-green';
+  }
+
+  state.running = false;
+  document.getElementById('btn-run').disabled=false;
+  document.getElementById('btn-pause').disabled=true;
+  renderSteps();
+}
+
+function pauseWorkflow() {
+  // Simple pause toggle via flag
+  state.paused = !state.paused;
+  document.getElementById('btn-pause').textContent = state.paused ? '▶ Resume' : '⏸ Pause';
+}
+
+function resetWorkflow() {
+  state.running = false;
+  state.paused = false;
+  state.currentStep = -1;
+  state.stepResults = {};
+  state.stepStatuses = {};
+  state.stepErrors = {};
+  state.auditLog = [];
+  state.metrics = {steps:0,human:0,errors:0};
+  state.agentStatuses = {};
+  state.humanPending = false;
+  state.humanResolve = null;
+  state.sla = {overall:0,data:100,ttc:100,comp:100};
+
+  document.getElementById('btn-run').disabled = false;
+  document.getElementById('btn-pause').disabled = true;
+  document.getElementById('btn-pause').textContent = '⏸ Pause';
+  document.getElementById('system-status').textContent = 'Standby';
+  document.getElementById('system-dot').className = 'dot dot-amber';
+  document.getElementById('audit-feed').innerHTML = '';
+  document.getElementById('audit-count').textContent = '0 events';
+
+  ['overall','data','ttc','comp'].forEach(k=>{
+    const v = k==='overall'?0:100;
+    document.getElementById(`sla-${k}`).textContent = v+(k==='ttc'?'':'')||'On Track';
+    if(k==='ttc'){document.getElementById('sla-ttc').textContent='On Track';}
+    else document.getElementById(`sla-${k}`).textContent=v+'%';
+    document.getElementById(`sla-${k}-fill`).style.cssText=`width:${v}%;background:var(--accent3)`;
+  });
+
+  const wf = WORKFLOWS[state.workflowIdx];
+  document.getElementById('run-status').innerHTML = `Ready to execute · <span>${wf.name}</span>`;
+  document.getElementById('step-counter').textContent = `0 / ${wf.steps.length} complete`;
+
+  renderAgents();
+  updateMetrics();
+
+  document.getElementById('workflow-viz').style.display = 'none';
+  document.getElementById('workflow-viz').innerHTML = '';
+  renderInputForm(state.workflowIdx);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────
+renderAgents();
+updateMetrics();
+renderInputForm(0);
+</script>
+</body>
+</html>
