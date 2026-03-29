@@ -40,14 +40,14 @@ The system is designed to:
 ---
 
 ## 🏗️ System Architecture
-    USER
-     ↓
- FRONTEND UI
-     ↓
- WORKFLOW ENGINE
-     ↓
- ORCHESTRATOR
 
+**User**  
+⬇️  
+**Agent Layer**  
+⬇️  
+**Workflow Engine**  
+⬇️  
+**Execution & Output**
 ---
 
 ## 🤖 Agents
