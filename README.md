@@ -143,33 +143,33 @@ Tracks:
 git clone https://github.com/your-username/agentic-ai-workflow.git
 cd agentic-ai-workflow
 ```
-📂 2. Open the Project
+###📂 2. Open the Project
 
 Simply open the HTML file in your browser:
 
 open index.html
 
-▶️ 3. Run the System
+###▶️ 3. Run the System
 
 Select a workflow
 Click Run Workflow
 Observe agent execution in real-time
 
-📌 Use Cases
+###📌 Use Cases
 
 Employee onboarding
 Procurement automation
 Contract lifecycle management
 Enterprise workflow orchestration
 
-🚀 Future Enhancements
+###🚀 Future Enhancements
 
 Integration with real enterprise tools (SAP, Slack, AWS)
 Advanced ML-based predictions
 Persistent backend with database
 Multi-user support
 
-💼 Resume Highlight
+###💼 Resume Highlight
 
 Built a multi-agent AI system for automating enterprise workflows with:
 
@@ -177,13 +177,13 @@ Autonomous execution
 Error recovery
 Audit logging
 
-🤝 Contributing
+###🤝 Contributing
 
 Contributions are welcome!
 
 Feel free to fork the repository and submit a pull request.
 
-📄 License
+###📄 License
 
 This project is for educational and demonstration purposes only.
 
